@@ -8,10 +8,21 @@
 
 import UIKit
 
+
+struct Score: Decodable {
+    let name: String
+    let score: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case name = "Name"
+        case score = "Score"
+    }
+}
+
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
     @IBOutlet weak var table: UITableView!
-    var scores : [[String: Any]] = []
+    var scores : [Score] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -20,12 +31,18 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         table.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
        
         //TODO: Get the list of scores coming from your plist
-        
-        
-        //TODO: Add two entries by code
-        
-        
-        //TODO: Display the complete list of scores in the table view
+        let ezraScore: [String: Any] = [
+            "Name": "Ezra Morales",
+            "Score": 3
+        ]
+        let lyraScore: [String: Any] = [
+            "Name": "Lyra Morales",
+            "Score": 1
+        ]
+        addValuePlist(plistName: "Scores", item: ezraScore)
+        addValuePlist(plistName: "Scores", item: lyraScore)
+        self.scores = readFromPropertyList(plistName: "Scores")
+        table.reloadData()
         
     }
     
@@ -44,12 +61,34 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath as IndexPath)
         let item = scores[indexPath.row]
         //TODO: Make sure to display the score and name
+        cell.textLabel?.text = "\(String(item.score))\t\(item.name)"
         return cell
         
     }
     
     //MARK: Plist handling
     //TODO: Keep your file clean by adding helper methods to handle the plist.
+    func readFromPropertyList(plistName resource: String) -> [Score] {
+        guard let scorePlistURL = Bundle.main.url(forResource: resource, withExtension: "plist") else { return [Score]() }
+        guard let scorePlistData = FileManager.default.contents(atPath: scorePlistURL.path) else { return [Score]() }
+        guard let scores = try? PropertyListDecoder().decode([Score].self, from: scorePlistData) else { return [Score]() }
+        
+        return scores
+    }
     
+    func addValuePlist(plistName resource: String, item: [String: Any]) {
+        guard let scorePlistURL = Bundle.main.path(forResource: resource, ofType: "plist") else { return }
+        if FileManager.default.fileExists(atPath: scorePlistURL) {
+            guard let plistArray = NSMutableArray(contentsOfFile: scorePlistURL) else { return }
+            plistArray.add(item)
+            
+            // adding values to the dictionary
+            if FileManager.default.fileExists(atPath: scorePlistURL) {
+                if !plistArray.write(toFile: scorePlistURL, atomically: false) {
+                    print("File not written successfully")
+                }
+            }
+        }
+    }
     
 }
